@@ -10,7 +10,7 @@ log_file="${logfile_path}aws_describe.log.`date +%Y%m%d%H%M`"
 arr_profile=(aliasA aliasB aliasC)
 
 # リージョンリストの取得
-regions=`aws ec2 describe-regions --profile mdjtech | jq '.Regions | .[].RegionName' | sed -e 's/\"//g'`
+regions=`aws ec2 describe-regions --profile aliasA | jq '.Regions | .[].RegionName' | sed -e 's/\"//g'`
 
 # ログファイル初期化
 cat /dev/null > $log_file
