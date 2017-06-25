@@ -12,9 +12,6 @@ arr_profile=(aliasA aliasB aliasC)
 # リージョンリストの取得
 regions=`aws ec2 describe-regions --profile aliasA | jq '.Regions | .[].RegionName' | sed -e 's/\"//g'`
 
-# ログファイル初期化
-cat /dev/null > $log_file
-
 # 実行時間
 echo "==== 取得日次: "`date +"%Y/%m/%d %H:%M"` >> $log_file 
 
@@ -22,6 +19,7 @@ echo "==== 取得日次: "`date +"%Y/%m/%d %H:%M"` >> $log_file
 for profile in ${arr_profile[@]}
 do
   echo "#### $profile" >> $log_file
+  # regionのwhile
   echo "$regions" | while read region
   do
     echo "==== $region" >> $log_file
@@ -35,6 +33,7 @@ do
         jq -r '.InstanceStatuses[] | "\(.InstanceId), \(.Events[] | .Description), \(.Events[] | .NotBefore), \(.Events[] | .NotAfter)"'`
 
       if [ ! -z "${event_result}" ]; then
+        # eventがあったインスタンス毎のwhile
         echo "${event_result}" | while read event_line
         do
           # ホスト名取得
@@ -51,15 +50,6 @@ do
   done
   echo "" >> $log_file
 done
-
-function check_timestamp(){
-  file_date=`sed -n 2P $1 | rev | cut -c 7-11 | rev`
-  if [ $file_date = `date +"%m/%d"` ]; then
-    return true
-  else 
-    return false
-  fi
-}
 
 function filter_logfile(){
   target_instanc=""
@@ -85,10 +75,12 @@ function filter_logfile(){
 if [ ! -f $log_file ]; then
   echo -e "aws cliが正常に呼べなかったみたいね"
   exit 9
+
 elif [ -z `cat ${log_file} | egrep -v '====|####'` ]; then
   echo "今はec2 eventを気にする必要はないみたいね"
   exit 0
-elif [ "check_timestamp ${log_file}" ]; then
+
+elif [ -f $log_file ]; then
   filter_logfile "${log_file}"
   echo "日本時間にしたいなら+9時間してね"
   exit 0
@@ -99,5 +91,4 @@ fi
 
 # ログファイル削除
 
-# find ${logfile_path} -name 'aws_describe.log.*' -mtime +14 -delete
-find ${logfile_path} -name 'aws_describe.log.*' -m 10 -delete
+find ${logfile_path} -name 'aws_describe.log.*' -mtime +14 -delete
